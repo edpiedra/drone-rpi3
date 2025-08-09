@@ -1,0 +1,2 @@
+export OPENNI2_INCLUDE=/home/pi/Documents/SDK/Orbbec-SDK-2.3.0.63_test/Linux/OpenNI-Linux-Arm-2.3.0.63/Include
+export OPENNI2_REDIST=/home/pi/Documents/SDK/Orbbec-SDK-2.3.0.63_test/Linux/OpenNI-Linux-Arm-2.3.0.63/Redist
