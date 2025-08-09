@@ -137,7 +137,7 @@ python3 -m pip install --upgrade pip
 python3 -m pip install --force-reinstall --no-deps --no-index "${NAVIO2_WHEEL}"
 python3 -m pip install -r requirements.txt
 # Ensure SPI/I2C GPIO Python bindings are present in this venv
-python3 -m pip install --upgrade spidev smbus2 RPi.GPIO
+python3 -m pip install --upgrade spidev smbus smbus2 RPi.GPIO
 
 # Sanity check: this venv's python must import 'navio2'
 python3 - <<'PY'
