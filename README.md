@@ -20,6 +20,7 @@ sudo systemctl start arducopter
 > clone repository and install project
 ```
 sudo apt update && sudo apt -y dist-upgrade
+sudo reboot
 sudo apt install -y git
 cd ~
 git clone https://github.com/edpiedra/drone-rpi3.git
