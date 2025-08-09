@@ -1,55 +1,72 @@
 #!/usr/bin/env python3
 import time
+import sys
 import navio2.pwm as pwm_mod
 import navio2.util as util
 
-util.check_apm()  # ensure ArduPilot is NOT running
+# Stop ArduPilot first! (systemctl stop arducopter)
+util.check_apm()
 
-SERVO_MIN_US = 1100
-SERVO_MAX_US = 1900
-TEST_POWER_US = 1300
 F_HZ = 50
-PERIOD_US = 1_000_000 // F_HZ  # 20_000 us at 50 Hz
+PERIOD_US = 1_000_000 // F_HZ  # 20,000 us
+SERVO_MIN_US = 1100
+TEST_US = 1450                  # a bit higher so direction is obvious
+SPIN_SEC = 3.0
+GAP_SEC = 3.0
 
-MOTOR_CHANNELS = [0, 1, 2, 3]
+# Navio2 channels are 0-based; ArduPilot labeling shown in comments
+MOTORS = [
+    (0, "Motor 1 (Front Right)  EXPECTED: CCW"),
+    (1, "Motor 2 (Rear  Left)   EXPECTED: CCW"),
+    (2, "Motor 3 (Front Left)   EXPECTED: CW"),
+    (3, "Motor 4 (Rear  Right)  EXPECTED: CW"),
+]
 
 def set_pulse(p, pulse_us):
-    """Be flexible across navio2 variants."""
     if hasattr(p, "set_duty_cycle_us"):
         p.set_duty_cycle_us(int(pulse_us))
     else:
-        # Some builds use 'set_duty_cycle' as a fraction (0..1) or percent.
-        # We'll try fraction first; if that fails, try raw microseconds.
-        frac = float(pulse_us) / float(PERIOD_US)  # 0..1
+        # Fallback across variants: try fractional duty
+        frac = float(pulse_us) / float(PERIOD_US)
         try:
-            p.set_duty_cycle(frac)   # e.g., 0.055 for 1100us at 20ms
+            p.set_duty_cycle(frac)
         except Exception:
-            # Fallback: some forks actually expect microseconds here
             p.set_duty_cycle(int(pulse_us))
 
-pwms = {}
-for ch in MOTOR_CHANNELS:
+# Init all channels at min (before enabling)
+pwms = []
+for ch, _ in MOTORS:
     p = pwm_mod.PWM(ch)
     p.initialize()
-    p.set_period(F_HZ)            # set period first
-    set_pulse(p, SERVO_MIN_US)    # set a safe duty BEFORE enabling
-    p.enable()                    # then enable the output
-    pwms[ch] = p
+    p.set_period(F_HZ)
+    set_pulse(p, SERVO_MIN_US)
+    p.enable()
+    pwms.append((ch, p))
 
-print("Starting motor test. Props OFF. ESCs powered and calibrated?")
-time.sleep(2.0)
+print("=== MOTOR DIRECTION CHECK ===")
+print("* Props OFF. Tape/zip-tie flags on motor bells.")
+print("* ESCs powered. ArduPilot stopped.")
+time.sleep(2)
 
 try:
-    for ch in MOTOR_CHANNELS:
-        print(f"Spinning motor on channel {ch}...")
-        set_pulse(pwms[ch], TEST_POWER_US)
-        time.sleep(0.5)
-        set_pulse(pwms[ch], SERVO_MIN_US)
-        print("Waiting 2s…")
-        time.sleep(2.0)
+    for ch, label in MOTORS:
+        print(f"\n{label}")
+        for i in range(3, 0, -1):
+            print(f"  Spinning channel {ch} in {i}...")
+            time.sleep(1)
+        set_pulse(dict(pwms)[ch], TEST_US)
+        t0 = time.time()
+        while time.time() - t0 < SPIN_SEC:
+            time.sleep(0.05)
+        set_pulse(dict(pwms)[ch], SERVO_MIN_US)
+        print(f"  Stopped. Waiting {GAP_SEC:.0f}s...")
+        time.sleep(GAP_SEC)
 finally:
-    print("Stopping and disabling all motors.")
-    for ch, p in pwms.items():
-        set_pulse(p, SERVO_MIN_US)
-        p.disable()
-    print("Test complete.")
+    print("\nDisabling all outputs...")
+    for _, p in pwms:
+        try:
+            set_pulse(p, SERVO_MIN_US)
+            p.disable()
+        except Exception:
+            pass
+    print("Done.")
