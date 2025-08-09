@@ -30,9 +30,10 @@ chmod +x install/install.sh
 # it will ask you to plug the orbbec astra mini s camera into the usb and hit ENTER
 ```
 
-> run test sample
+> run test samples
 ```
 cd ~/drone-rpi3
 source .venv/bin/activate
 python3 -m test-body-detection
+python3 -m test-motors
 ```

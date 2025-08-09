@@ -10,15 +10,12 @@ if [[ "${EUID}" -eq 0 ]]; then
 fi
 
 # --- Resolve paths relative to the script location ---
-# This script is expected at <project>/install/install.sh
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 HOME_DIR="${HOME}"
 LOG_DIR="${HOME_DIR}/install_logs"
 BUILD_LOG="${LOG_DIR}/install.log"
 
 # --- Project-specific paths ---
-GITIGNORE_FILE="${PROJECT_DIR}/.gitignore"
-
 ARM_VERSION="OpenNI-Linux-Arm-2.3.0.63"
 OPENNISDK_SOURCE="${PROJECT_DIR}/sdks/${ARM_VERSION}"
 OPENNISDK_DIR="${HOME_DIR}/openni"
@@ -53,8 +50,6 @@ sudo apt-get install -y -q \
   build-essential freeglut3 freeglut3-dev \
   python3-opencv python3-venv python3-smbus python3-spidev python3-numpy python3-pip \
   curl npm nodejs gcc g++ make python3 usbutils
-
-# Some systems need libudev reinstalled for OpenNI tooling
 sudo apt-get install --reinstall -y -q libudev1
 
 log "[ 3/12] preparing OpenNI SDK destination..."
@@ -100,11 +95,19 @@ if [[ ! -f "${NAVIO2_WHEEL}" ]]; then
   git clone "${NAVIO2_GIT}" "${NAVIO2_DIR}"
   cd "${NAVIO2_PYTHON_DIR}"
   python3 -m venv env --system-site-packages
+
+  # --- protect activate/deactivate from 'set -u' ---
   # shellcheck disable=SC1091
+  set +u
   source env/bin/activate
+  set -u
+
   python3 -m pip install --upgrade pip wheel
   python3 setup.py bdist_wheel
+
+  set +u
   deactivate
+  set -u
 else
   log "Navio2 wheel already exists: ${NAVIO2_WHEEL}"
 fi
@@ -114,18 +117,26 @@ cd "${PROJECT_DIR}"
 if [[ ! -d ".venv" ]]; then
   python3 -m venv .venv --system-site-packages
 fi
+
+# --- protect activate/deactivate from 'set -u' ---
 # shellcheck disable=SC1091
+set +u
 source .venv/bin/activate
+set -u
+
 python3 -m pip install --upgrade pip
 python3 -m pip install "${NAVIO2_WHEEL}"
 python3 -m pip install -r requirements.txt
+
+set +u
+deactivate
+set -u
 
 log "[11/12] exporting OPENNI2_REDIST if missing..."
 if ! grep -Eq '^export OPENNI2_REDIST=' "${HOME_DIR}/.bashrc"; then
   echo "export OPENNI2_REDIST='${OPENNI2_REDIST_DIR}'" >> "${HOME_DIR}/.bashrc"
   echo "→ Added OPENNI2_REDIST to ~/.bashrc"
 fi
-# Also export for current shell
 export OPENNI2_REDIST="${OPENNI2_REDIST_DIR}"
 
 log "[12/12] installing OpenNI redistributables into system lib..."
