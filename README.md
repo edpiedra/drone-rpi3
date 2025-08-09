@@ -34,6 +34,6 @@ bash ./install/install.sh
 ```
 cd ~/drone-rpi3
 source .venv/bin/activate
-python3 -m test-body-detection
+python3 -m test-body-detector
 python3 -m test-motors
 ```

@@ -103,7 +103,7 @@ if [[ ! -f "${NAVIO2_WHEEL}" ]]; then
   rm -rf "${NAVIO2_DIR}"
   git clone "${NAVIO2_GIT}" "${NAVIO2_DIR}"
   cd "${NAVIO2_PYTHON_DIR}"
-  python3 -m venv env --system-site-packages
+  python3 -m venv env
 
   # --- protect activate/deactivate from 'set -u' ---
   # shellcheck disable=SC1091
@@ -124,7 +124,7 @@ fi
 log "[10/12] creating/using project virtual environment..."
 cd "${PROJECT_DIR}"
 if [[ ! -d ".venv" ]]; then
-  python3 -m venv .venv --system-site-packages
+  python3 -m venv .venv
 fi
 
 # --- protect activate/deactivate from 'set -u' ---
@@ -134,8 +134,19 @@ safe_source .venv/bin/activate
 set -u
 
 python3 -m pip install --upgrade pip
-python3 -m pip install "${NAVIO2_WHEEL}"
+python3 -m pip install --force-reinstall --no-deps --no-index "${NAVIO2_WHEEL}"
 python3 -m pip install -r requirements.txt
+
+# Sanity check: this venv's python must import 'navio' (module name != dist name)
+python3 - <<'PY'
+import sys
+try:
+    import navio
+    print("[verify] OK: ", sys.executable, "->", getattr(navio, "__file__", "built-in module"))
+except Exception as e:
+    print("[verify] FAIL importing 'navio' from", sys.executable, ":", e)
+    raise SystemExit(1)
+PY
 
 set +u
 deactivate
