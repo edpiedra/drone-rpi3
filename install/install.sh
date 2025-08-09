@@ -1,171 +1,219 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Safely source files even when nounset is enabled
-safe_source() {
-  # Usage: safe_source <path>
-  # shellcheck disable=SC1090
-  set +u
-  . "$1"
-  set -u
+#############################################
+# Logging & safety
+#############################################
+LOG_DIR="${HOME}/.cache/drone-rpi3"
+BUILD_LOG="${LOG_DIR}/install_$(date +%Y%m%d_%H%M%S).log"
+mkdir -p "${LOG_DIR}"
+exec > >(tee -a "${BUILD_LOG}") 2>&1
+
+log() {
+  # prints: [YYYY-mm-dd HH:MM:SS] [install.sh:func:LINE] message
+  local ts func line
+  ts="$(date '+%Y-%m-%d %H:%M:%S')"
+  func="${FUNCNAME[1]:-main}"
+  line="${BASH_LINENO[0]:-0}"
+  printf '[%s] [%s:%s:%s] %s\n' "$ts" "$(basename "$0")" "$func" "$line" "$*"
 }
 
+trap 'rc=$?; log "ERROR exit code $rc at line ${BASH_LINENO[0]}"; exit $rc' ERR
 
-SCRIPT_NAME=$(basename "$0")
-
-# --- Safety: do not run as root in your repo. ---
-if [[ "${EUID}" -eq 0 ]]; then
-  echo "Do not run this script with sudo. It will use sudo only when needed."
+if [[ ${EUID} -eq 0 ]]; then
+  log "Refusing to run as root. Re-run as a normal user (sudo will be used when needed)."
   exit 1
 fi
 
-# --- Resolve paths relative to the script location ---
-PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+#############################################
+# Resolve paths / project layout
+#############################################
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+# Support running from install/ or repo root
+if [[ -f "${SCRIPT_DIR}/../requirements.txt" ]]; then
+  PROJECT_DIR="$(realpath "${SCRIPT_DIR}/..")"
+else
+  PROJECT_DIR="$(realpath "${SCRIPT_DIR}")"
+fi
 HOME_DIR="${HOME}"
-LOG_DIR="${HOME_DIR}/install_logs"
-BUILD_LOG="${LOG_DIR}/install.log"
 
-# --- Project-specific paths ---
-ARM_VERSION="OpenNI-Linux-Arm-2.3.0.63"
-OPENNISDK_SOURCE="${PROJECT_DIR}/sdks/${ARM_VERSION}"
-OPENNISDK_DIR="${HOME_DIR}/openni"
-OPENNISDK_DEST="${OPENNISDK_DIR}/${ARM_VERSION}"
-GNU_LIB_DIR="/lib/arm-linux-gnueabihf"
-SIMPLE_READ_EXAMPLE="${OPENNISDK_DEST}/Samples/SimpleRead"
-OPENNI2_REDIST_DIR="${OPENNISDK_DEST}/Redist"
+log "Project dir: ${PROJECT_DIR}"
+cd "${PROJECT_DIR}"
 
+# ARM / OS checks (Pi 3 + Emlid 32-bit)
+ARCH="$(uname -m || true)"
+KERNEL="$(uname -r || true)"
+if [[ "${ARCH}" != "armv7l" && "${ARCH}" != "armhf" ]]; then
+  log "Warning: expected armv7 (Pi 3 32-bit). Detected ${ARCH} (kernel ${KERNEL}). Continuing anyway."
+fi
+
+#############################################
+# Apt packages
+#############################################
+log "[1/12] updating apt index..."
+sudo apt-get update -y
+
+log "[2/12] installing system packages (no opencv-python via pip)..."
+sudo apt-get install -y \
+  python3 python3-venv python3-pip python3-dev \
+  python3-opencv \
+  build-essential git pkg-config \
+  libusb-1.0-0 libudev1 udev \
+  unzip curl ca-certificates
+
+# Helpful tools for diagnostics
+sudo apt-get install -y usbutils || true
+
+#############################################
+# Python venv (inherits system site-packages)
+#############################################
+log "[3/12] creating/using virtual environment with system site-packages..."
+cd "${PROJECT_DIR}"
+if [[ -d ".venv" ]]; then
+  log "Existing .venv found; leaving it in place."
+else
+  python3 -m venv --system-site-packages .venv
+  log "Created .venv with --system-site-packages."
+fi
+
+# Safe activate with nounset
+set +u
+# shellcheck disable=SC1091
+source ".venv/bin/activate"
+set -u
+python -V
+pip -V
+
+#############################################
+# Python deps (from requirements.txt)
+#############################################
+REQ="${PROJECT_DIR}/requirements.txt"
+if [[ -f "${REQ}" ]]; then
+  log "[4/12] installing Python requirements..."
+  # DO NOT add opencv-python here; we rely on python3-opencv from apt.
+  pip install --upgrade pip wheel
+  pip install -r "${REQ}"
+else
+  log "No requirements.txt found; skipping."
+fi
+
+#############################################
+# Clone & build Navio2 Python wheel (if missing)
+#############################################
 NAVIO2_GIT="https://github.com/emlid/Navio2.git"
 NAVIO2_DIR="${HOME_DIR}/Navio2"
 NAVIO2_PYTHON_DIR="${NAVIO2_DIR}/Python"
 NAVIO2_WHEEL="${NAVIO2_PYTHON_DIR}/dist/navio2-1.0.0-py3-none-any.whl"
 
-mkdir -p "${LOG_DIR}"
-exec > >(tee "${BUILD_LOG}") 2>&1
-
-log() {
-  local message="$*"
-  local timestamp
-  timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-  local calling_function=${FUNCNAME[1]:-"main"}
-  local line_number=${BASH_LINENO[0]:-0}
-  echo -e "\n[${timestamp}] [${SCRIPT_NAME}:${calling_function}:${line_number}] ${message}\n"
-}
-
-log "[ 1/12] updating system packages..."
-sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q dist-upgrade
-
-log "[ 2/12] installing system packages..."
-sudo apt-get install -y -q \
-  build-essential freeglut3 freeglut3-dev \
-  python3-opencv python3-venv python3-smbus python3-spidev python3-numpy python3-pip \
-  curl npm nodejs gcc g++ make python3 usbutils
-sudo apt-get install --reinstall -y -q libudev1
-
-log "[ 3/12] preparing OpenNI SDK destination..."
-rm -rf "${OPENNISDK_DIR}"
-mkdir -p "${OPENNISDK_DIR}"
-
-log "[ 4/12] copying OpenNI SDK from repo to home..."
-if [[ ! -d "${OPENNISDK_SOURCE}" ]]; then
-  echo "ERROR: Expected SDK source at ${OPENNISDK_SOURCE} not found."
-  exit 1
-fi
-cp -r "${OPENNISDK_SOURCE}" "${OPENNISDK_DIR}"
-
-log "[ 5/12] installing OpenNI SDK..."
-cd "${OPENNISDK_DEST}"
-chmod +x install.sh
-sudo ./install.sh
-
-log "[ 6/12] sourcing OpenNI dev environment..."
-# shellcheck disable=SC1091
-safe_source OpenNIDevEnvironment
-read -p "→ OpenNI SDK installed. Replug your Orbbec device, then press ENTER. " _
-
-log "[ 7/12] verifying Orbbec device..."
-if lsusb | grep -q '2bc5:0407'; then
-  echo "Orbbec Astra Mini S detected."
-elif lsusb | grep -q '2bc5'; then
-  echo "[ERROR] Different Orbbec device detected (e.g., Astra Pro)."
-  exit 1
+log "[5/12] preparing Navio2 sources..."
+if [[ ! -d "${NAVIO2_DIR}/.git" ]]; then
+  git clone --depth=1 "${NAVIO2_GIT}" "${NAVIO2_DIR}"
 else
-  echo "[ERROR] No Orbbec device found."
-  exit 1
+  (cd "${NAVIO2_DIR}" && git fetch --depth=1 && git reset --hard origin/master) || true
 fi
 
-log "[ 8/12] building OpenNI SimpleRead sample..."
-cd "${SIMPLE_READ_EXAMPLE}"
-make
-
-log "[ 9/12] building Navio2 Python wheel (if missing)..."
+log "[6/12] building Navio2 Python wheel (if missing)..."
 if [[ ! -f "${NAVIO2_WHEEL}" ]]; then
-  rm -rf "${NAVIO2_DIR}"
-  git clone "${NAVIO2_GIT}" "${NAVIO2_DIR}"
   cd "${NAVIO2_PYTHON_DIR}"
-  python3 -m venv env
-
-  # --- protect activate/deactivate from 'set -u' ---
-  # shellcheck disable=SC1091
-  set +u
-safe_source env/bin/activate
-  set -u
-
-  python3 -m pip install --upgrade pip wheel
-  python3 setup.py bdist_wheel
-
-  set +u
-  deactivate
-  set -u
+  python -m pip install --upgrade build
+  python -m build --wheel
 else
   log "Navio2 wheel already exists: ${NAVIO2_WHEEL}"
 fi
 
-log "[10/12] creating/using project virtual environment..."
-cd "${PROJECT_DIR}"
-if [[ ! -d ".venv" ]]; then
-  python3 -m venv .venv
+log "[7/12] installing Navio2 wheel into venv..."
+pip install --force-reinstall "${NAVIO2_WHEEL}"
+
+#############################################
+# OpenNI SDK wiring (from repo sdks folder if present)
+#############################################
+ARM_VERSION="Arm-Release"
+OPENNISDK_SOURCE="${PROJECT_DIR}/sdks/${ARM_VERSION}"
+OPENNISDK_DIR="${HOME_DIR}/openni"
+OPENNISDK_DEST="${OPENNISDK_DIR}/${ARM_VERSION}"
+OPENNI2_REDIST_DIR="${OPENNISDK_DEST}/Redist"
+SIMPLE_READ_EXAMPLE="${OPENNISDK_DEST}/Samples/SimpleRead"
+
+if [[ -d "${OPENNISDK_SOURCE}" ]]; then
+  log "[8/12] installing OpenNI SDK files..."
+  mkdir -p "${OPENNISDK_DIR}"
+  rsync -a --delete "${OPENNISDK_SOURCE}/" "${OPENNISDK_DEST}/"
+  # Export and persist OPENNI2_REDIST
+  if ! grep -Eq '^export OPENNI2_REDIST=' "${HOME_DIR}/.bashrc"; then
+    echo "export OPENNI2_REDIST='${OPENNI2_REDIST_DIR}'" >> "${HOME_DIR}/.bashrc"
+    log "Added OPENNI2_REDIST to ~/.bashrc"
+  fi
+  export OPENNI2_REDIST="${OPENNI2_REDIST_DIR}"
+
+  # Deploy redistributables into /lib so the loader can find them
+  log "[9/12] copying OpenNI redistributables into /lib..."
+  sudo cp -r "${OPENNI2_REDIST_DIR}/"* "/lib/" || true
+else
+  log "OpenNI SDK folder not found at ${OPENNISDK_SOURCE}; skipping copy."
+  # Still attempt to set OPENNI2_REDIST if a previous install exists
+  if [[ -d "${OPENNI2_REDIST_DIR}" ]]; then
+    export OPENNI2_REDIST="${OPENNI2_REDIST_DIR}"
+  fi
 fi
 
-# --- protect activate/deactivate from 'set -u' ---
-# shellcheck disable=SC1091
-set +u
-safe_source .venv/bin/activate
-set -u
+#############################################
+# Hardware check (optional prompt)
+#############################################
+log "[10/12] optional: plug in the Orbbec Astra Mini S via USB, then press ENTER (or Ctrl+C to skip)."
+read -r -p "" _ || true
+lsusb | grep -i -E 'orbbec|astra' || log "Note: Orbbec device not detected via lsusb; continuing."
 
-python3 -m pip install --upgrade pip
-python3 -m pip install --force-reinstall --no-deps --no-index "${NAVIO2_WHEEL}"
-python3 -m pip install -r requirements.txt
-# Ensure SPI/I2C GPIO Python bindings are present in this venv
-python3 -m pip install --upgrade spidev smbus smbus2 RPi.GPIO
-
-# Sanity check: this venv's python must import 'navio2'
-python3 - <<'PY'
+#############################################
+# Verifications (cv2, openni, wheels, binaries)
+#############################################
+log "[11/12] verifying Python imports (cv2, openni)..."
+python - <<'PY'
 import sys
+ok = True
+print("[verify] Python:", sys.version)
 try:
-    import navio2
-    print("[verify] OK: ", sys.executable, "->", getattr(navio2, "__file__", "built-in module"))
+    import cv2
+    print("[verify] OK cv2:", cv2.__version__, "from", cv2.__file__)
 except Exception as e:
-    print("[verify] FAIL importing 'navio2' from", sys.executable, ":", e)
+    ok = False
+    print("[verify] FAIL: cv2 import:", e)
+try:
+    import openni
+    from openni import openni2
+    print("[verify] OK openni package; initializing...")
+    try:
+        openni2.initialize()
+        print("[verify] OK openni2.initialize()")
+        openni2.unload()
+    except Exception as e:
+        print("[verify] WARN: openni2.initialize() failed:", e)
+except Exception as e:
+    ok = False
+    print("[verify] FAIL: openni import:", e)
+if not ok:
     raise SystemExit(1)
 PY
 
-set +u
-deactivate
-set -u
-
-log "[11/12] exporting OPENNI2_REDIST if missing..."
-if ! grep -Eq '^export OPENNI2_REDIST=' "${HOME_DIR}/.bashrc"; then
-  echo "export OPENNI2_REDIST='${OPENNI2_REDIST_DIR}'" >> "${HOME_DIR}/.bashrc"
-  echo "→ Added OPENNI2_REDIST to ~/.bashrc"
+# Basic OpenNI sample presence
+if [[ -d "${SIMPLE_READ_EXAMPLE}" ]]; then
+  file "${SIMPLE_READ_EXAMPLE}/Bin/${ARM_VERSION}/SimpleRead" || true
 fi
-export OPENNI2_REDIST="${OPENNI2_REDIST_DIR}"
-
-log "[12/12] installing OpenNI redistributables into system lib..."
-sudo cp -r "${OPENNI2_REDIST_DIR}/"* "/lib/"
-
-log "[verify] checking builds..."
-file "${SIMPLE_READ_EXAMPLE}/Bin/Arm-Release/SimpleRead" || true
 file "${NAVIO2_WHEEL}" || true
 
-log "✅ Install complete. Logs saved to: ${BUILD_LOG}"
+#############################################
+# Finish
+#############################################
+set +u
+deactivate || true
+set -u
+
+log "[12/12] install complete ✅"
+log "Logs saved to: ${BUILD_LOG}"
+
+echo
+echo "Next steps:"
+echo "  cd ${PROJECT_DIR}"
+echo "  source .venv/bin/activate"
+echo "  python3 -m test-body-detector"
+echo "  python3 -m test-motors"

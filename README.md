@@ -29,6 +29,7 @@ chmod +x install/install.sh
 bash ./install/install.sh
 
 # it will ask you to plug the orbbec astra mini s camera into the usb and hit ENTER
+sudo reboot
 ```
 
 > run test samples
