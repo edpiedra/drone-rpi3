@@ -136,15 +136,17 @@ set -u
 python3 -m pip install --upgrade pip
 python3 -m pip install --force-reinstall --no-deps --no-index "${NAVIO2_WHEEL}"
 python3 -m pip install -r requirements.txt
+# Ensure SPI/I2C GPIO Python bindings are present in this venv
+python3 -m pip install --upgrade spidev smbus2 RPi.GPIO
 
-# Sanity check: this venv's python must import 'navio' (module name != dist name)
+# Sanity check: this venv's python must import 'navio2'
 python3 - <<'PY'
 import sys
 try:
-    import navio
-    print("[verify] OK: ", sys.executable, "->", getattr(navio, "__file__", "built-in module"))
+    import navio2
+    print("[verify] OK: ", sys.executable, "->", getattr(navio2, "__file__", "built-in module"))
 except Exception as e:
-    print("[verify] FAIL importing 'navio' from", sys.executable, ":", e)
+    print("[verify] FAIL importing 'navio2' from", sys.executable, ":", e)
     raise SystemExit(1)
 PY
 
