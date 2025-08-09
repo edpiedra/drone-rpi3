@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Safely source files even when nounset is enabled
+safe_source() {
+  # Usage: safe_source <path>
+  # shellcheck disable=SC1090
+  set +u
+  . "$1"
+  set -u
+}
+
+
 SCRIPT_NAME=$(basename "$0")
 
 # --- Safety: do not run as root in your repo. ---
@@ -70,8 +80,7 @@ sudo ./install.sh
 
 log "[ 6/12] sourcing OpenNI dev environment..."
 # shellcheck disable=SC1091
-source OpenNIDevEnvironment
-
+safe_source OpenNIDevEnvironment
 read -p "→ OpenNI SDK installed. Replug your Orbbec device, then press ENTER. " _
 
 log "[ 7/12] verifying Orbbec device..."
@@ -99,7 +108,7 @@ if [[ ! -f "${NAVIO2_WHEEL}" ]]; then
   # --- protect activate/deactivate from 'set -u' ---
   # shellcheck disable=SC1091
   set +u
-  source env/bin/activate
+safe_source env/bin/activate
   set -u
 
   python3 -m pip install --upgrade pip wheel
@@ -121,7 +130,7 @@ fi
 # --- protect activate/deactivate from 'set -u' ---
 # shellcheck disable=SC1091
 set +u
-source .venv/bin/activate
+safe_source .venv/bin/activate
 set -u
 
 python3 -m pip install --upgrade pip
