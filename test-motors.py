@@ -3,45 +3,53 @@ import time
 import navio2.pwm as pwm_mod
 import navio2.util as util
 
-# Must be root for hardware access
-util.check_apm()
+util.check_apm()  # ensure ArduPilot is NOT running
 
-# PWM configuration
-SERVO_MIN = 1100   # µs (stop)
-SERVO_MAX = 1900   # µs (full throttle)
-TEST_POWER = 1300  # µs (low spin test)
+SERVO_MIN_US = 1100
+SERVO_MAX_US = 1900
+TEST_POWER_US = 1300
+F_HZ = 50
+PERIOD_US = 1_000_000 // F_HZ  # 20_000 us at 50 Hz
 
-# NOTE: Navio2 PWM channels are 0-based in the Python API.
-# If your old code used 1–4, switch to 0–3.
 MOTOR_CHANNELS = [0, 1, 2, 3]
 
-# Initialize PWM for each motor channel
+def set_pulse(p, pulse_us):
+    """Be flexible across navio2 variants."""
+    if hasattr(p, "set_duty_cycle_us"):
+        p.set_duty_cycle_us(int(pulse_us))
+    else:
+        # Some builds use 'set_duty_cycle' as a fraction (0..1) or percent.
+        # We'll try fraction first; if that fails, try raw microseconds.
+        frac = float(pulse_us) / float(PERIOD_US)  # 0..1
+        try:
+            p.set_duty_cycle(frac)   # e.g., 0.055 for 1100us at 20ms
+        except Exception:
+            # Fallback: some forks actually expect microseconds here
+            p.set_duty_cycle(int(pulse_us))
+
 pwms = {}
 for ch in MOTOR_CHANNELS:
     p = pwm_mod.PWM(ch)
     p.initialize()
-    p.set_period(50)           # 50 Hz for ESCs
-    p.enable()
-    p.set_duty_cycle(SERVO_MIN)
+    p.set_period(F_HZ)            # set period first
+    set_pulse(p, SERVO_MIN_US)    # set a safe duty BEFORE enabling
+    p.enable()                    # then enable the output
     pwms[ch] = p
 
 print("Starting motor test. Props OFF. ESCs powered and calibrated?")
-
-# Give ESCs a moment at min signal to arm safely
-time.sleep(3.0)
+time.sleep(2.0)
 
 try:
     for ch in MOTOR_CHANNELS:
         print(f"Spinning motor on channel {ch}...")
-        pwms[ch].set_duty_cycle(TEST_POWER)   # start motor
-        time.sleep(0.5)                       # spin time
-        pwms[ch].set_duty_cycle(SERVO_MIN)    # stop
-        print(f"Motor {ch} stopped. Waiting 2 seconds.")
+        set_pulse(pwms[ch], TEST_POWER_US)
+        time.sleep(0.5)
+        set_pulse(pwms[ch], SERVO_MIN_US)
+        print("Waiting 2s…")
         time.sleep(2.0)
-
 finally:
     print("Stopping and disabling all motors.")
     for ch, p in pwms.items():
-        p.set_duty_cycle(SERVO_MIN)
+        set_pulse(p, SERVO_MIN_US)
         p.disable()
     print("Test complete.")
