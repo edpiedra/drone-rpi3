@@ -59,9 +59,9 @@ sudo apt-get install -y \
   python3 python3-venv python3-pip python3-dev \
   python3-opencv \
   build-essential git pkg-config \
-  libusb-1.0-0 libudev1 udev \
+  libusb-1.0-0 udev \
   unzip curl ca-certificates
-
+sudo apt-get --reinstall install -y libudev1
 # Helpful tools for diagnostics
 sudo apt-get install -y usbutils || true
 
