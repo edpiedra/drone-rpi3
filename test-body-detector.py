@@ -23,5 +23,4 @@ with AstraPi3() as camera:
     except KeyboardInterrupt:
         pass
     finally:
-        camera.__destroy__()
         print("Shutdown complete.")

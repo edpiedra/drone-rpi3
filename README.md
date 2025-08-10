@@ -15,21 +15,23 @@ sudo emlidtool ardupilot
 sudo systemctl start arducopter
 ```
 
+> test connection to Mission Planner on the GCS
+
 > use sudo raspi-config to change hostname and password and reboot
 
 > clone repository and install project
 ```
-sudo apt update && sudo apt -y dist-upgrade
-sudo apt install -y git
+sudo apt update && sudo apt -y -qq dist-upgrade
+sudo apt install -y -qq git
 sudo reboot
 cd ~
 git clone https://github.com/edpiedra/drone-rpi3.git
 cd drone-rpi3
-chmod +x install/install.sh
+#chmod +x install/install.sh
 bash ./install/install.sh
 
 # it will ask you to plug the orbbec astra mini s camera into the usb and hit ENTER
-sudo reboot
+sudo reboot # when finished
 ```
 
 > run test samples

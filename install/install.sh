@@ -42,7 +42,7 @@ log "[ 1/12] updating system packages..."
 sudo apt-get update && sudo apt-get -y -qq dist-upgrade
 
 log "[ 2/12] installing system packages..."
-sudo apt-get install -y -qq build-essential freeglut3 freeglut3-dev python3-opencv python3-venv python3-smbus python3-spidev python3-numpy python3-pip curl npm nodejs gcc g++ make python3
+sudo apt-get install -y -qq build-essential freeglut3 freeglut3-dev python3-opencv python3-dev python3-venv python3-smbus python3-spidev python3-numpy python3-pip curl npm nodejs gcc g++ make python3
 sudo apt-get install --reinstall -y -qq libudev1
 
 log "[ 3/12] copying OpenNI SDK distribution..."
