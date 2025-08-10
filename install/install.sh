@@ -98,10 +98,10 @@ if [ ! -f "$NAVIO2_WHEEL" ]; then
     git clone "$NAVIO2_GIT"
     cd "$NAVIO2_PYTHON_DIR" || { log "missing $NAVIO2_PYTHON_DIR"; exit 1; }
     python3 -m venv env --system-site-packages
-    source env/bin/activate
+    set +u; source env/bin/activate; set -u
     python3 -m pip install wheel
     python3 setup.py bdist_wheel
-    deactivate nondestructive
+    set +u; deactivate; set -u
 else 
     log "[ 8/12] skipping cloning $NAVIO2_GIT because $NAVIO2_WHEEL aleady exists..."
 fi
@@ -111,10 +111,17 @@ cd "$DRONE_DIR"
 
 if [ ! -d .venv ]; then 
     python3 -m venv .venv --system-site-packages
-    source .venv/bin/activate
+    set +u; source .venv/bin/activate; set -u
+    python -m pip install --upgrade "pip==24.0" "setuptools<69" "wheel<0.41" "tomli>=2.0.1"
     python3 -m pip install "$NAVIO2_PYTHON_DIR/dist/navio2-1.0.0-py3-none-any.whl"
-    python3 -m pip install -r requirements.txt
-    deactivate nondestructive
+    PIP_PREFER_BINARY=1 python3 -m pip install -r requirements.txt
+    set +u; deactivate; set -u
+else 
+    set +u; source .venv/bin/activate; set -u
+    python -m pip install --upgrade "pip==24.0" "setuptools<69" "wheel<0.41" "tomli>=2.0.1"
+    python3 -m pip install "$NAVIO2_PYTHON_DIR/dist/navio2-1.0.0-py3-none-any.whl"
+    PIP_PREFER_BINARY=1 python3 -m pip install -r requirements.txt
+    set +u; deactivate; set -u
 fi
 
 log "[10/12] adding environmental variables..."
