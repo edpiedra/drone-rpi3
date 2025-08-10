@@ -39,11 +39,11 @@ log() {
  }
 
 log "[ 1/12] updating system packages..."
-sudo apt-get update && sudo apt-get -y -q dist-upgrade
+sudo apt-get update && sudo apt-get -y -qq dist-upgrade
 
 log "[ 2/12] installing system packages..."
-sudo apt-get install -y -q build-essential freeglut3 freeglut3-dev python3-opencv python3-venv python3-smbus python3-spidev python3-numpy python3-pip curl npm nodejs gcc g++ make python3
-sudo apt-get install --reinstall -y -q libudev1
+sudo apt-get install -y -qq build-essential freeglut3 freeglut3-dev python3-opencv python3-venv python3-smbus python3-spidev python3-numpy python3-pip curl npm nodejs gcc g++ make python3
+sudo apt-get install --reinstall -y -qq libudev1
 
 log "[ 3/12] copying OpenNI SDK distribution..."
 if [ -d "$OPENNISDK_DIR" ]; then 
@@ -51,7 +51,7 @@ if [ -d "$OPENNISDK_DIR" ]; then
 fi 
 
 mkdir "$OPENNISDK_DIR"
-sudo cp -r "$OPENNISDK_SOURCE" "$OPENNISDK_DIR"
+cp -r "$OPENNISDK_SOURCE" "$OPENNISDK_DIR"
 
 log "[ 4/12] installing OpenNI SDK..."
 cd "$OPENNISDK_DEST"
@@ -118,7 +118,7 @@ fi
 log "[11/12] moving dlls..."
 sudo cp -r "$OPENNI2_REDIST_DIR/"* "/lib/"
 
-log "[11/12] verifying builds..."
+log "[12/12] verifying builds..."
 file "$SIMPLE_READ_EXAMPLE/Bin/Arm-Release/SimpleRead"
 file "$NAVIO2_WHEEL"
 
