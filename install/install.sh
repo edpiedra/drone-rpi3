@@ -91,17 +91,17 @@ if [ ! -f "$NAVIO2_WHEEL" ]; then
     log "[ 8/12] cloning from $NAVIO2_GIT..."
 
     if [ -d "$NAVIO2_DIR" ]; then 
-        rm -r "$NAVIO2_DIR"
+        rm -rf "$NAVIO2_DIR"
     fi 
 
     cd "$HOME"
     git clone "$NAVIO2_GIT"
-    cd "$NAVIO2_PYTHON_DIR"
+    cd "$NAVIO2_PYTHON_DIR" || { log "missing $NAVIO2_PYTHON_DIR"; exit 1; }
     python3 -m venv env --system-site-packages
     source env/bin/activate
     python3 -m pip install wheel
     python3 setup.py bdist_wheel
-    deactivate
+    deactivate nondestructive
 else 
     log "[ 8/12] skipping cloning $NAVIO2_GIT because $NAVIO2_WHEEL aleady exists..."
 fi
@@ -114,7 +114,7 @@ if [ ! -d .venv ]; then
     source .venv/bin/activate
     python3 -m pip install "$NAVIO2_PYTHON_DIR/dist/navio2-1.0.0-py3-none-any.whl"
     python3 -m pip install -r requirements.txt
-    deactivate 
+    deactivate nondestructive
 fi
 
 log "[10/12] adding environmental variables..."
