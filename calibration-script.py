@@ -1,5 +1,5 @@
 from pymavlink import mavutil
-m = mavutil.mavlink_connection('udp:192.168.1.31:14550')  # change if needed
+m = mavutil.mavlink_connection('udp:192.168.1.44:14550')  # RPi IP
 m.wait_heartbeat()
 m.mav.param_set_send(m.target_system, m.target_component,
                      b'ESC_CALIBRATION', float(3),
