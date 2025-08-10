@@ -76,7 +76,16 @@ fi
 
 log "[ 7/12] building $SIMPLE_READ_EXAMPLE..."
 cd "$SIMPLE_READ_EXAMPLE"
-make 
+
+if [ ! -d "$OPENNISDK_DEST/Redist" ]; then
+  log "[ERROR] Missing $OPENNISDK_DEST/Redist (did the SDK extract correctly?)"
+  exit 1
+fi
+
+make -j"$(nproc)" \
+  OPENNI2_DIR="$OPENNISDK_DEST" \
+  OPENNI2_REDIST="$OPENNISDK_DEST/Redist" \
+  OPENNI2_INCLUDE="$OPENNISDK_DEST/Include"
 
 if [ ! -f "$NAVIO2_WHEEL" ]; then 
     log "[ 8/12] cloning from $NAVIO2_GIT..."

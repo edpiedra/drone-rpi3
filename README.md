@@ -27,11 +27,10 @@ sudo reboot
 cd ~
 git clone https://github.com/edpiedra/drone-rpi3.git
 cd drone-rpi3
-#chmod +x install/install.sh
 bash ./install/install.sh
 
 # it will ask you to plug the orbbec astra mini s camera into the usb and hit ENTER
-sudo reboot # when finished
+sudo reboot # when install is finished
 ```
 
 > run test samples
@@ -39,5 +38,7 @@ sudo reboot # when finished
 cd ~/drone-rpi3
 source .venv/bin/activate
 python3 -m test-body-detector
+
+
 python3 -m test-motors
 ```
