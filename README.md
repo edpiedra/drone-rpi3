@@ -32,6 +32,15 @@ bash ./install/install.sh
 # it will ask you to plug the orbbec astra mini s camera into the usb and hit ENTER
 sudo reboot # when install is finished
 ```
+> calibrate ESCs
+------------------------------------------------------
+```
+# cut power to ESCs
+sudo pkill -f arducopter
+sudo systemctl stop arducopter
+# power up ESCs
+sudo /usr/bin/arducopter -A udp:192.168.1.31:14550 -E udp:127.0.0.1:14551
+
 
 > run test samples
 ```
