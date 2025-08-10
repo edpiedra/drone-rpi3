@@ -1,12 +1,22 @@
+import cv2
+import logging 
+
+import numpy as np
+
 from openni import openni2
 from openni import _openni2 as c_api
-import cv2
-import numpy as np
+
+logger = logging.getLogger(__name__)
 
 class AstraPi3:
     def __init__(self, width: int = 320, height: int = 240, fps: int = 30):
         """
         Creates a camera object and starts depth + color streams.
+        
+        Args:
+            width : in pixels (320, 640, ...)
+            height : in pixels (240, 480, ...)
+            fps : frames per second (typically 30)
         """
         self.width = width
         self.height = height
@@ -16,7 +26,7 @@ class AstraPi3:
         openni2.initialize()
         devs = openni2.Device.open_all()
         if not devs:
-            # Clean up the OpenNI runtime if no device is found
+            logger.error('no OpenNI-compatible device found.')
             openni2.unload()
             raise RuntimeError("No OpenNI-compatible device found.")
         dev = devs[0]
@@ -70,15 +80,13 @@ class AstraPi3:
             self._opened = False
 
     def _wait(self, stream, timeout_ms: int) -> bool:
-        """Wait for a single stream with timeout; return True if ready, False on timeout."""
         try:
-            # Wait for readiness; if timeout occurs, some wrappers raise, others return -1.
             openni2.wait_for_any_stream([stream], timeout_ms)
             return True
         except Exception:
             return False
 
-    def get_depth_frame(self, timeout_ms: int = 50):
+    def get_depth_frame(self, timeout_ms: int = 50) -> np.ndarray|None:
         """
         Returns a 2D depth frame (uint16) or None on timeout.
         """
@@ -92,7 +100,7 @@ class AstraPi3:
         img = cv2.flip(img, 1)
         return img
 
-    def get_color_frame(self, timeout_ms: int = 50):
+    def get_color_frame(self, timeout_ms: int = 50) -> np.ndarray|None:
         """
         Returns an RGB frame (uint8 HxWx3) or None on timeout.
         """
@@ -102,7 +110,5 @@ class AstraPi3:
         frame_data = frame.get_buffer_as_uint8()
         img = np.frombuffer(frame_data, dtype=np.uint8)
         img.shape = (self.height, self.width, 3)
-        # OpenNI color stream is RGB; convert to BGR if you prefer OpenCV default
-        # Here we keep it as RGB for consistency with your original code
         img = cv2.flip(img, 1)
         return img

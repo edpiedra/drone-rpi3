@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_NAME=$(basename "$0")
 
 HOME="/home/pi"
-PROJECT_DIR="$HOME/drone-rpi3-32-bit"
+PROJECT_DIR="$HOME/drone-rpi3"
 
 ARM_VERSION="OpenNI-Linux-Arm-2.3.0.63"
 OPENNISDK_SOURCE="$PROJECT_DIR/sdks/$ARM_VERSION"
@@ -15,19 +15,11 @@ GNU_LIB_DIR="/lib/arm-linux-gnueabihf"
 SIMPLE_READ_EXAMPLE="$OPENNISDK_DEST/Samples/SimpleRead"
 OPENNI2_REDIST_DIR="$OPENNISDK_DEST/Redist"
 
-DRONE_DIR="$HOME/drone-rpi3-32-bit"
+DRONE_DIR="$HOME/drone-rpi3"
 NAVIO2_GIT="https://github.com/emlid/Navio2.git"
 NAVIO2_DIR="$HOME/Navio2"
 NAVIO2_PYTHON_DIR="$NAVIO2_DIR/Python"
 NAVIO2_WHEEL="$NAVIO2_PYTHON_DIR/dist/navio2-1.0.0-py3-none-any.whl"
-
-#OPENCV_VERSION="4.5.5"
-#PYTHON_VERSION="3.7"
-#VENV_NAME="cv_env"
-#VENV_PATH="$HOME/${VENV_NAME}"
-#WHEEL_DIR="$HOME/opencv_wheels"
-#OPENCV_BUILD="$HOME/opencv_build"
-
 PROJECT_INSTALL_DIR="$PROJECT_DIR/install"
 
 LOG_DIR="$HOME/install_logs"
@@ -51,7 +43,6 @@ sudo apt-get update && sudo apt-get -y -q dist-upgrade
 
 log "[ 2/12] installing system packages..."
 sudo apt-get install -y -q build-essential freeglut3 freeglut3-dev python3-opencv python3-venv python3-smbus python3-spidev python3-numpy python3-pip curl npm nodejs gcc g++ make python3
-
 sudo apt-get install --reinstall -y -q libudev1
 
 log "[ 3/12] copying OpenNI SDK distribution..."
@@ -65,7 +56,7 @@ sudo cp -r "$OPENNISDK_SOURCE" "$OPENNISDK_DIR"
 log "[ 4/12] installing OpenNI SDK..."
 cd "$OPENNISDK_DEST"
 chmod +x install.sh
-sudo ./install.sh
+bash ./install.sh
 
 log "[ 5/12] sourcing OpenNI development environment..."
 source OpenNIDevEnvironment
@@ -95,12 +86,13 @@ if [ ! -f "$NAVIO2_WHEEL" ]; then
     fi 
 
     cd "$HOME"
-    sudo git clone "$NAVIO2_GIT"
+    git clone "$NAVIO2_GIT"
     cd "$NAVIO2_PYTHON_DIR"
     python3 -m venv env --system-site-packages
     source env/bin/activate
     python3 -m pip install wheel
     python3 setup.py bdist_wheel
+    deactivate
 else 
     log "[ 8/12] skipping cloning $NAVIO2_GIT because $NAVIO2_WHEEL aleady exists..."
 fi
@@ -109,10 +101,11 @@ log "[ 9/12] checking for drone project virtual environment..."
 cd "$DRONE_DIR"
 
 if [ ! -d .venv ]; then 
-    sudo python3 -m venv .venv --system-site-packages
+    python3 -m venv .venv --system-site-packages
     source .venv/bin/activate
-    sudo python3 -m pip install "$NAVIO2_PYTHON_DIR/dist/navio2-1.0.0-py3-none-any.whl"
-    sudo python3 -m pip install -r requirements.txt
+    python3 -m pip install "$NAVIO2_PYTHON_DIR/dist/navio2-1.0.0-py3-none-any.whl"
+    python3 -m pip install -r requirements.txt
+    deactivate 
 fi
 
 log "[10/12] adding environmental variables..."
