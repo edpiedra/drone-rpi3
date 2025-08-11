@@ -19,7 +19,7 @@ cp -r "$OPENNISDK_SOURCE" "$OPENNISDK_DIR"
 
 log "installing OpenNI SDK..."
 cd "$OPENNISDK_DEST"
-chmod +x install.sh
+#chmod +x install.sh
 bash ./install.sh
 
 log "sourcing OpenNI development environment..."

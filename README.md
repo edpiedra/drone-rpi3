@@ -40,7 +40,17 @@ sudo pkill -f arducopter
 sudo systemctl stop arducopter
 # power up ESCs
 sudo /usr/bin/arducopter -A udp:192.168.1.31:14550 -E udp:127.0.0.1:14551
+```
 
+# alternatively
+-----------------------------------------------------
+```
+# cut power to ESCs
+sudo pkill -f arducopter
+sudo systemctl stop arducopter
+# power up ESCs
+python3 -m calibration-script
+```
 
 > run test samples
 ```
