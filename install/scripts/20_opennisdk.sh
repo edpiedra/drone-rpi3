@@ -19,8 +19,8 @@ cp -r "$OPENNISDK_SOURCE" "$OPENNISDK_DIR"
 
 log "installing OpenNI SDK..."
 cd "$OPENNISDK_DEST"
-chmod +x install.sh
-bash ./install.sh
+sudo chmod +x install.sh
+sudo ./install.sh
 
 log "sourcing OpenNI development environment..."
 source OpenNIDevEnvironment
@@ -50,3 +50,6 @@ make -j"$(nproc)" \
   OPENNI2_DIR="$OPENNISDK_DEST" \
   OPENNI2_REDIST="$OPENNISDK_REDIST_DIR" \
   OPENNI2_INCLUDE="$OPENNISDK_DEST/Include"
+
+log "making $SIMPLE_READ_EXAMPLE executable///"
+chmod 777 "$SIMPLE_READ_EXAMPLE/Bin/Arm-Release/SimpleRead"
