@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-$SCRIPTS_DIR="/home/pi/drone-rpi3/install/scripts"
+SCRIPTS_DIR="/home/pi/drone-rpi3/install/scripts"
 source "$SCRIPTS_DIR/00_common.env"
 source "$SCRIPTS_DIR/00_lib.sh"
 
