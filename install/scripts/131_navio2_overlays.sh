@@ -41,8 +41,11 @@ cp -a "$CONF" "$BACKUP"
 log "backed up $CONF -> $BACKUP"
 
 # ensure overlay and SPI are enabled
-ensure_line "dtoverlay" "navio2"
 ensure_line "dtparam" "spi=on"
+ensure_line "dtoverlay" "rcio"
+ensure_line "dtoverlay" "spi0-4cs"
+ensure_line "dtoverlay" "spi1-1cs"
+ensure_line "dtoverlay" "navio-rgb"
 
 log "verifying current settings:"
 grep -E '^(dtoverlay|dtparam)=' "$CONF" | sed 's/^/  /'
