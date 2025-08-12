@@ -27,3 +27,6 @@ if [ ! -f "$NAVIO2_WHEEL" ]; then
 else 
     log "skipping cloning $NAVIO2_GIT because $NAVIO2_WHEEL aleady exists..."
 fi 
+
+log ="adding navio2 related overlays..."
+sudo bash "$SCRIPTS_DIR/131_navio2_overlays.sh"

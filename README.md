@@ -48,12 +48,18 @@ sudo /usr/bin/arducopter -A udp:192.168.1.31:14550 -E udp:127.0.0.1:14551
 # cut power to ESCs
 sudo pkill -f arducopter
 sudo systemctl stop arducopter
+cd ~/drone-rpi3
+source .venv/bin/activate
+
 # power up ESCs
 python3 -m calibration-script
 ```
 
 > run test samples
 ```
+cd ~
+sudo /home/pi/openni/OpenNI-Linux-Arm-2.3.0.63/Samples/SimpleRead/Bin/Arm-Release/SimpleRead
+
 cd ~/drone-rpi3
 source .venv/bin/activate
 python3 -m test-body-detector
