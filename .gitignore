@@ -9,3 +9,5 @@ install_logs/
 # Editors
 .vscode/
 .idea/
+
+misc/

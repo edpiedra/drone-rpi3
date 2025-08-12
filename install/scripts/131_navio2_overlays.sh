@@ -10,6 +10,8 @@ source "$SCRIPTS_DIR/00_lib.sh"
 CONF=/boot/config.txt
 STAMP="$(date +%Y%m%d-%H%M%S)"
 BACKUP="/boot/config.txt.bak-${STAMP}"
+OVERLAY_DIR=/boot/overlays
+OVERLAY_SOURCE="$PROJECT_DIR/overlays"
 
 require_root(){
   if [[ $EUID -ne 0 ]]; then
@@ -21,7 +23,7 @@ require_root(){
 ensure_line(){
   local key="$1" value="$2"
   # Remove any commented or duplicate entries of the same key
-  sed -i -E "s/^[#[:space:]]*${key}=.*$//" "$CONF"
+  #sed -i -E "s/^[#[:space:]]*${key}=.*$//" "$CONF"
   if ! grep -q -E "^${key}=${value}$" "$CONF"; then
     echo "${key}=${value}" >> "$CONF"
     log "added: ${key}=${value}"
@@ -50,3 +52,5 @@ ensure_line "dtoverlay" "navio-rgb"
 log "verifying current settings:"
 grep -E '^(dtoverlay|dtparam)=' "$CONF" | sed 's/^/  /'
 
+log "copying overlays."
+cp -r "$OVERLAY_SOURCE/*" "$OVERLAY_DIR/"
