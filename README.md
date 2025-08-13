@@ -37,6 +37,9 @@ sudo reboot # when install is finished
 ```
 # start Mission Planner and connect
 # set ESC_CALIBRATION=1 : config -> full parameter list
+sudo shutdown now
+# power on on RPi and Navio2.
+# turn on BECs once ArduPilot starts and Mission Planner is connected.
 # it will run calibration
 # set ESC_CALIBRATION=0
 sudo reboot

@@ -53,4 +53,4 @@ log "verifying current settings:"
 grep -E '^(dtoverlay|dtparam)=' "$CONF" | sed 's/^/  /'
 
 log "copying overlays."
-cp -raf "$OVERLAY_SOURCE/." "$OVERLAY_DIR/"
+sudo cp -raf "$OVERLAY_SOURCE/." "$OVERLAY_DIR/"
