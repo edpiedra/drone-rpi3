@@ -20,10 +20,12 @@ require_root(){
   fi
 }
 
+remove_lines(){
+  local key="$1"
+  sed -i -E "s/^[#[:space:]]*${key}=.*$//" "$CONF"
+}
 ensure_line(){
   local key="$1" value="$2"
-  # Remove any commented or duplicate entries of the same key
-  sed -i -E "s/^[#[:space:]]*${key}=.*$//" "$CONF"
   if ! grep -q -E "^${key}=${value}$" "$CONF"; then
     echo "${key}=${value}" >> "$CONF"
     log "added: ${key}=${value}"
@@ -41,6 +43,10 @@ fi
 
 cp -a "$CONF" "$BACKUP"
 log "backed up $CONF -> $BACKUP"
+
+# cleanup config file
+remove_lines "dtoverlay"
+remove_lines "dtparam"
 
 # ensure overlay and SPI are enabled
 ensure_line "dtoverlay" "pi3-disable-bt"
