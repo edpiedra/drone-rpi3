@@ -35,6 +35,14 @@ sudo reboot # when install is finished
 > calibrate ESCs
 ------------------------------------------------------
 ```
+# start Mission Planner and connect
+# set ESC_CALIBRATION=1 : config -> full parameter list
+# it will run calibration
+# set ESC_CALIBRATION=0
+sudo reboot
+```
+
+```
 # cut power to ESCs
 sudo pkill -f arducopter
 sudo systemctl stop arducopter
