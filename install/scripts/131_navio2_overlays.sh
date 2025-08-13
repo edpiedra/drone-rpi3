@@ -23,7 +23,7 @@ require_root(){
 ensure_line(){
   local key="$1" value="$2"
   # Remove any commented or duplicate entries of the same key
-  #sed -i -E "s/^[#[:space:]]*${key}=.*$//" "$CONF"
+  sed -i -E "s/^[#[:space:]]*${key}=.*$//" "$CONF"
   if ! grep -q -E "^${key}=${value}$" "$CONF"; then
     echo "${key}=${value}" >> "$CONF"
     log "added: ${key}=${value}"
@@ -43,10 +43,13 @@ cp -a "$CONF" "$BACKUP"
 log "backed up $CONF -> $BACKUP"
 
 # ensure overlay and SPI are enabled
+ensure_line "dtoverlay" "pi3-disable-bt"
 ensure_line "dtparam" "spi=on"
+ensure_line "dtparam" "i2c1=on"
+ensure_line "dtparam" "i2c1_baudrate=1000000"
 ensure_line "dtoverlay" "rcio"
-ensure_line "dtoverlay" "spi0-4cs"
-ensure_line "dtoverlay" "spi1-1cs"
+#ensure_line "dtoverlay" "spi0-4cs"
+#ensure_line "dtoverlay" "spi1-1cs"
 ensure_line "dtoverlay" "navio-rgb"
 
 log "verifying current settings:"

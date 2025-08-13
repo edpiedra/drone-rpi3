@@ -32,18 +32,34 @@ bash ./install/install.sh
 # it will ask you to plug the orbbec astra mini s camera into the usb and hit ENTER
 sudo reboot # when install is finished
 ```
+
 > calibrate ESCs
 ------------------------------------------------------
 ```
 # start Mission Planner and connect
 # set ESC_CALIBRATION=1 : config -> full parameter list
 sudo shutdown now
-# power on on RPi and Navio2.
+# power off BECs and power on RPi and Navio2.
 # turn on BECs once ArduPilot starts and Mission Planner is connected.
 # it will run calibration
 # set ESC_CALIBRATION=0
 sudo reboot
 ```
+
+> run test samples
+```
+cd ~
+sudo /home/pi/openni/OpenNI-Linux-Arm-2.3.0.63/Samples/SimpleRead/Bin/Arm-Release/SimpleRead
+
+cd ~/drone-rpi3
+source .venv/bin/activate
+python3 -m test-body-detector
+
+
+python3 -m test-motors
+```
+
+
 
 ```
 # cut power to ESCs
@@ -64,17 +80,4 @@ source .venv/bin/activate
 
 # power up ESCs
 python3 -m calibration-script
-```
-
-> run test samples
-```
-cd ~
-sudo /home/pi/openni/OpenNI-Linux-Arm-2.3.0.63/Samples/SimpleRead/Bin/Arm-Release/SimpleRead
-
-cd ~/drone-rpi3
-source .venv/bin/activate
-python3 -m test-body-detector
-
-
-python3 -m test-motors
 ```
