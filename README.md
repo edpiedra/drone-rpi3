@@ -19,9 +19,25 @@ sudo systemctl start arducopter
 
 > use sudo raspi-config to change hostname and password and reboot
 
+> calibrate ESCs
+------------------------------------------------------
+```
+# set ardupilot to start on boot
+sudo emlidtool ardupilot
+sudo systemctl start arducopter
+# start Mission Planner and connect
+# set ESC_CALIBRATION=1 : config -> full parameter list
+sudo shutdown now
+# power off BECs and power on RPi and Navio2.
+# turn on BECs once ArduPilot starts (steady yellow blinking light).
+# it will run calibration
+# set ESC_CALIBRATION=0
+sudo reboot
+```
+
 > clone repository and install project
 ```
-sudo apt update && sudo apt -y -qq dist-upgrade
+sudo apt -qq update && sudo apt -y -qq dist-upgrade
 sudo apt install -y -qq git
 sudo reboot
 cd ~
@@ -33,18 +49,6 @@ bash ./install/install.sh
 sudo reboot # when install is finished
 ```
 
-> calibrate ESCs
-------------------------------------------------------
-```
-# start Mission Planner and connect
-# set ESC_CALIBRATION=1 : config -> full parameter list
-sudo shutdown now
-# power off BECs and power on RPi and Navio2.
-# turn on BECs once ArduPilot starts and Mission Planner is connected.
-# it will run calibration
-# set ESC_CALIBRATION=0
-sudo reboot
-```
 
 > run test samples
 ```
