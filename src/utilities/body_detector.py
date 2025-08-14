@@ -1,6 +1,8 @@
 import cv2
 import logging 
 
+from typing import List, Tuple
+
 logger = logging.getLogger(__name__)
 
 # full list of cascade types can be found in data/haarcascades
@@ -16,7 +18,7 @@ class BodyDetector:
         if self.body_cascade.empty():
             raise RuntimeError(f"Failed to load cascade: {cascade_filename}")
 
-    def detect_bodies(self, frame) -> list[tuple[int]]:
+    def detect_bodies(self, frame) -> List[Tuple[int, int, int, int]]:
         """
         Scans a frame for bodies.
 
@@ -29,7 +31,7 @@ class BodyDetector:
         bodies = self.body_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3)
         return bodies
 
-    def get_body_centers(self, bodies: list[tuple[int]]) -> list[tuple[int]]:
+    def get_body_centers(self, bodies: list[tuple[int]]) -> List[Tuple[int, int]]:
         """
         Returns a list of centers for each body
 
