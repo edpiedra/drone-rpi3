@@ -17,7 +17,8 @@ with AstraPi3() as camera:
 
             bodies = detector.detect_bodies(frame)
             centers = detector.get_body_centers(bodies)
-            print(centers)
+            print('bodies: ', bodies)
+            print('centers: ', centers)
 
             time.sleep(0.005)
     except KeyboardInterrupt:
