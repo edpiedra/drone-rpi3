@@ -5,6 +5,7 @@ import numpy as np
 
 from openni import openni2
 from openni import _openni2 as c_api
+from typing import Optional 
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class AstraPi3:
         except Exception:
             return False
 
-    def get_depth_frame(self, timeout_ms: int = 50) -> np.ndarray|None:
+    def get_depth_frame(self, timeout_ms: int = 50) -> Optional[np.ndarray]:
         """
         Returns a 2D depth frame (uint16) or None on timeout.
         """
@@ -100,7 +101,7 @@ class AstraPi3:
         img = cv2.flip(img, 1)
         return img
 
-    def get_color_frame(self, timeout_ms: int = 50) -> np.ndarray|None:
+    def get_color_frame(self, timeout_ms: int = 50) -> Optional[np.ndarray]:
         """
         Returns an RGB frame (uint8 HxWx3) or None on timeout.
         """
