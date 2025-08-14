@@ -57,6 +57,7 @@ ensure_line "dtoverlay" "rcio"
 ensure_line "dtoverlay" "spi0-4cs"
 ensure_line "dtoverlay" "spi1-1cs,cs0_pin=16,cs0_spidev=disabled"
 ensure_line "dtoverlay" "navio-rgb"
+ensure_line "dtoverlay" "vc4-fkms-v3d"
 
 log "verifying current settings:"
 grep -E '^(dtoverlay|dtparam)=' "$CONF" | sed 's/^/  /'
