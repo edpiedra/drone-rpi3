@@ -31,7 +31,7 @@ class BodyDetector:
         bodies = self.body_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3)
         return bodies
 
-    def get_body_centers(self, bodies: list[tuple[int]]) -> List[Tuple[int, int]]:
+    def get_body_centers(self, bodies: List[Tuple[int, int, int, int]]) -> List[Tuple[int, int]]:
         """
         Returns a list of centers for each body
 
