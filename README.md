@@ -35,6 +35,10 @@ sudo systemctl start arducopter
 sudo reboot
 ```
 
+> test motors
+--------------------------------------------------------------------------
+
+
 > clone repository and install project
 ```
 sudo apt -qq update && sudo apt -y -qq dist-upgrade
