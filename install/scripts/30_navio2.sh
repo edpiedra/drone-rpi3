@@ -25,7 +25,6 @@ if [ ! -f "$NAVIO2_WHEEL" ]; then
     cd "$NAVIO2_PYTHON_DIR" || { log "missing $NAVIO2_PYTHON_DIR"; exit 1; }
     python3 -m venv env --system-site-packages
     set +u; source env/bin/activate; set -u
-    python3 -m pip install -r requirements.txt
     python3 -m pip install wheel
     python3 setup.py bdist_wheel
     set +u; deactivate; set -u
