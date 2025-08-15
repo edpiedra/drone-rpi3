@@ -9,9 +9,6 @@ source "$SCRIPTS_DIR/00_lib.sh"
 
 NAVIO2_GIT="https://github.com/emlid/Navio2.git"
 
-log "installing requirements..."
-sudo apt-get install -y -qq gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-
 if [ ! -f "$NAVIO2_WHEEL" ]; then 
     log "cloning from $NAVIO2_GIT..."
 
@@ -32,3 +29,5 @@ else
     log "skipping cloning $NAVIO2_GIT because $NAVIO2_WHEEL aleady exists..."
 fi 
 
+log ="adding navio2 related overlays..."
+sudo bash "$SCRIPTS_DIR/131_navio2_overlays.sh"

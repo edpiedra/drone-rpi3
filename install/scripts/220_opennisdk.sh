@@ -9,10 +9,6 @@ source "$SCRIPTS_DIR/00_lib.sh"
 
 OPENNISDK_SOURCE="$PROJECT_DIR/sdks/$ARM_VERSION"
 
-log "installing prerequisites..."
-sudo apt-get install -y -qq freeglut3 
-sudo apt-get install --reinstall -y -qq libudev1
-
 log "copying OpenNI SDK distribution..."
 if [ -d "$OPENNISDK_DIR" ]; then 
     rm -r "$OPENNISDK_DIR"

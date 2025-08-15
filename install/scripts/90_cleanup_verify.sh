@@ -13,6 +13,11 @@ if ! grep -q "export OPENNI2_REDIST=.*$OPENNISDK_REDIST_DIR" ~/.bashrc; then
     echo "-> added $OPENNISDK_REDIST_DIR to OPENNI2_REDIST environmental variable in ~/.bashrc"
     source ~/.bashrc 
 fi 
+if ! grep -q "export CXX=arm-linux-gnueabihf-g++" ~/.bashrc; then 
+    echo "CXX=arm-linux-gnueabihf-g++" >> ~/.bashrc
+    echo "-> added arm-linux-gnueabihf-g++ to CXX environmental variable in ~/.bashrc"
+    source ~/.bashrc 
+fi 
 
 log "moving dlls..."
 sudo cp -r "$OPENNISDK_REDIST_DIR/"* "/lib/"
