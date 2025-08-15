@@ -10,7 +10,8 @@ source "$SCRIPTS_DIR/00_lib.sh"
 NAVIO2_GIT="https://github.com/emlid/Navio2.git"
 
 log "installing requirements..."
-sudo apt-get install -y -qq gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf python3-venv
+sudo apt-get install -y -qq gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+    python3-venv python3-smbus
 
 if [ ! -f "$NAVIO2_WHEEL" ]; then 
     log "cloning from $NAVIO2_GIT..."
