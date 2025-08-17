@@ -15,17 +15,18 @@ pulse_width_ns = int(pulse_width_us * 1000)
 
 print('starting test.')
 
-# Initialize and configure each motor channel only once
 channels = []
 for motor in range(NUM_MOTORS):
-    print('initializing motor {motor}.')
+    print(f'initializing motor {motor}.')
     ch = pwm.PWM(motor)
     ch.initialize()
-    ch.set_period(PERIOD_NS)
+    try:
+        ch.set_period(PERIOD_NS)
+    except OSError as e:
+        print(f"Warning: Failed to set period for motor {motor}: {e}")
     ch.enable()
     channels.append(ch)
 
-# Spin each motor in sequence
 for motor, ch in enumerate(channels):
     print(f'testing motor {motor}.')
     ch.set_duty_cycle(pulse_width_ns)
@@ -33,7 +34,6 @@ for motor, ch in enumerate(channels):
     ch.set_duty_cycle(NEUTRAL_US * 1000)
     time.sleep(DELAY_BETWEEN)
 
-# Optionally disable PWM channels at the end
 for ch in channels:
     ch.disable()
     ch.deinitialize()
