@@ -63,7 +63,7 @@ cd ~/drone-rpi3
 source .venv/bin/activate
 python3 -m test-body-detector
 
-
+sudo /usr/bin/arducopter-A udp:127.0.0.1:14550
 python3 -m test-motors
 ```
 
