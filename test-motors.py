@@ -16,6 +16,7 @@ pulse_width_ns = int(pulse_width_us * 1000)
 print('starting test.')
 
 for motor in range(NUM_MOTORS):
+    print(f'testing motor {motor}.')
     with pwm.PWM(motor) as channel:
         channel.set_period(PERIOD_NS)
         channel.enable()

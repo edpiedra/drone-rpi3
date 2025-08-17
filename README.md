@@ -28,15 +28,15 @@ sudo systemctl start arducopter
 # start Mission Planner and connect
 # setup -> mandatory hardware -> ESC calibration
 # press 'Calibrate ESCs'
-# power off BECs and RPi/Navio2, wait 10-15 seconds, and power on RPi and Navio2.
-# turn on BECs once ArduPilot starts (steady yellow blinking light). *** timing is everything
-# it will run calibration
-# set ESC_CALIBRATION=0
-sudo reboot
+# power off, wait 10-15 seconds, and power on.
+# ESCs will beep once calibrated
+# power off, wait 10-15 seconds, and power on.
 ```
 
 > test motors
 --------------------------------------------------------------------------
+```
+# setup -> optional hardware -> motor test
 
 
 > clone repository and install project
