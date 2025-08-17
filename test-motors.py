@@ -18,6 +18,7 @@ print('starting test.')
 # Initialize and configure each motor channel only once
 channels = []
 for motor in range(NUM_MOTORS):
+    print('initializing motor {motor}.')
     ch = pwm.PWM(motor)
     ch.initialize()
     ch.set_period(PERIOD_NS)
