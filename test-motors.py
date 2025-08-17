@@ -19,23 +19,34 @@ channels = []
 for motor in range(NUM_MOTORS):
     print(f'initializing motor {motor}.')
     ch = pwm.PWM(motor)
+    try:
+        ch.deinitialize()  # force deinit if left hanging
+    except:
+        pass
     ch.initialize()
     try:
         ch.set_period(PERIOD_NS)
+        ch.enable()
     except OSError as e:
-        print(f"Warning: Failed to set period for motor {motor}: {e}")
-    ch.enable()
+        print(f"Warning: Failed to set period/enable motor {motor}: {e}")
     channels.append(ch)
 
-for motor, ch in enumerate(channels):
-    print(f'testing motor {motor}.')
-    ch.set_duty_cycle(pulse_width_ns)
-    time.sleep(SPIN_TIME)
-    ch.set_duty_cycle(NEUTRAL_US * 1000)
-    time.sleep(DELAY_BETWEEN)
 
-for ch in channels:
-    ch.disable()
-    ch.deinitialize()
-
-print('finished test.')
+try:
+    for motor, ch in enumerate(channels):
+        print(f'testing motor {motor}.')
+        ch.set_duty_cycle(pulse_width_ns)
+        time.sleep(SPIN_TIME)
+        ch.set_duty_cycle(NEUTRAL_US * 1000)
+        time.sleep(DELAY_BETWEEN)
+except KeyboardInterrupt:
+    print("\nInterrupted! Stopping all motors.")
+finally:
+    for ch in channels:
+        try:
+            ch.set_duty_cycle(NEUTRAL_US * 1000)
+            ch.disable()
+            ch.deinitialize()
+        except:
+            pass
+    print("finished test.")
