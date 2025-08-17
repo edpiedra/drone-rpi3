@@ -19,8 +19,8 @@ for motor in range(NUM_MOTORS):
     print(f'testing motor {motor}.')
     with pwm.PWM(motor) as channel:
         channel.set_period(PERIOD_NS)
-        channel.enable()
         channel.set_duty_cycle(pulse_width_ns)
+        channel.enable()
         time.sleep(SPIN_TIME)
         channel.set_duty_cycle(NEUTRAL_US * 1000)
         time.sleep(DELAY_BETWEEN)
