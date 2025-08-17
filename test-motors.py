@@ -1,52 +1,59 @@
-from navio2 import pwm
+from pymavlink import mavutil
 import time
 
-NUM_MOTORS = 4
-FREQ_HZ = 400
-PERIOD_NS = int(1e9 / FREQ_HZ)
-NEUTRAL_US = 1000
-MAX_US = 2000
-THROTTLE_PERCENT = 10
-SPIN_TIME = 2.0
-DELAY_BETWEEN = 1.0
+# Connect to ArduPilot (adjust device and baudrate as needed)
+# For UART, use something like '/dev/ttyAMA0', 57600
+# For UDP, use 'udp:127.0.0.1:14550' if you're running ArduPilot locally
+master = mavutil.mavlink_connection('udp:127.0.0.1:14550')
 
-pulse_width_us = NEUTRAL_US + (MAX_US - NEUTRAL_US) * (THROTTLE_PERCENT / 100.0)
-pulse_width_ns = int(pulse_width_us * 1000)
+# Wait for heartbeat to make sure we're connected
+master.wait_heartbeat()
+print(f"Heartbeat from system {master.target_system} component {master.target_component}")
 
-print('starting test.')
+# Arm the drone (required for motor test)
+def arm():
+    master.mav.command_long_send(
+        master.target_system, master.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        1, 0, 0, 0, 0, 0, 0
+    )
+    print("Sent arm command")
+    master.recv_match(type='COMMAND_ACK', blocking=True)
+    time.sleep(2)
 
-channels = []
-for motor in range(NUM_MOTORS):
-    print(f'initializing motor {motor}.')
-    ch = pwm.PWM(motor)
-    try:
-        ch.deinitialize()  # force deinit if left hanging
-    except:
-        pass
-    ch.initialize()
-    try:
-        ch.set_period(PERIOD_NS)
-        ch.enable()
-    except OSError as e:
-        print(f"Warning: Failed to set period/enable motor {motor}: {e}")
-    channels.append(ch)
+# Disarm the drone
+def disarm():
+    master.mav.command_long_send(
+        master.target_system, master.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        0, 0, 0, 0, 0, 0, 0
+    )
+    print("Sent disarm command")
+    master.recv_match(type='COMMAND_ACK', blocking=True)
 
+# Run motor test on specific motor
+def test_motor(motor_num, throttle_type=0, throttle_pct=10, duration=2):
+    print(f"Testing motor {motor_num} at {throttle_pct}% for {duration} sec")
+    master.mav.command_long_send(
+        master.target_system, master.target_component,
+        mavutil.mavlink.MAV_CMD_DO_MOTOR_TEST,
+        0,
+        motor_num,         # motor sequence (1-4 for quad)
+        throttle_type,     # 0: percent, 1: PWM
+        throttle_pct,      # throttle (in % or PWM)
+        duration,          # duration in seconds
+        0, 0, 0            # unused
+    )
+    master.recv_match(type='COMMAND_ACK', blocking=True)
+    time.sleep(duration + 1)
 
-try:
-    for motor, ch in enumerate(channels):
-        print(f'testing motor {motor}.')
-        ch.set_duty_cycle(pulse_width_ns)
-        time.sleep(SPIN_TIME)
-        ch.set_duty_cycle(NEUTRAL_US * 1000)
-        time.sleep(DELAY_BETWEEN)
-except KeyboardInterrupt:
-    print("\nInterrupted! Stopping all motors.")
-finally:
-    for ch in channels:
-        try:
-            ch.set_duty_cycle(NEUTRAL_US * 1000)
-            ch.disable()
-            ch.deinitialize()
-        except:
-            pass
-    print("finished test.")
+# Begin testing
+arm()
+
+# Test motors 1 through 4 individually (modify for hexa/octo)
+for i in range(1, 5):
+    test_motor(motor_num=i, throttle_type=0, throttle_pct=10, duration=2)
+
+disarm()
