@@ -19,6 +19,7 @@ print('starting test.')
 channels = []
 for motor in range(NUM_MOTORS):
     ch = pwm.PWM(motor)
+    ch.initialize()
     ch.set_period(PERIOD_NS)
     ch.enable()
     channels.append(ch)
@@ -34,5 +35,6 @@ for motor, ch in enumerate(channels):
 # Optionally disable PWM channels at the end
 for ch in channels:
     ch.disable()
+    ch.deinitialize()
 
 print('finished test.')
